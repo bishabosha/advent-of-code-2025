@@ -2,8 +2,6 @@ package day01
 
 import challenges.*
 
-import stringmatching.regex.Interpolators.r
-
 @main def part1 = println(solve1(inputToday()))
 @main def part2 = println(solve2(inputToday()))
 
