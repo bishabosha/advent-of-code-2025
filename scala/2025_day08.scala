@@ -40,31 +40,29 @@ def calcDistances(input: String): (points: IArray[Point3D], conns: IArray[(Point
   (points, fastCombinations(points).sortBy(dist))
 
 def include(a: Point3D, b: Point3D, acc: IArray[Set[Point3D]]): IArray[Set[Point3D]] =
-  val state0 = (merge = Set[Point3D](), rest = IArray.newBuilder[Set[Point3D]])
-  val state1 = acc.foldLeft(state0): (state, points) =>
-    if points(a) || points(b) then (merge = state.merge ++ points + a + b, rest = state.rest)
-    else (merge = state.merge, rest = state.rest += points)
-  if state1.merge.nonEmpty then
-    (state1.rest += state1.merge).result()
-  else
-    (state1.rest += Set(a, b)).result()
+  val merge = Set.newBuilder[Point3D]
+  val rest = IArray.newBuilder[Set[Point3D]]
+  for points <- acc do
+    if points(a) || points(b) then merge ++= points
+    else rest += points
+  (rest += (merge += a += b).result()).result()
 
 def solve1(input: String, n: Int): Long =
   val state0 = calcDistances(input)
   val (pairings, rest0) = state0.conns.splitAt(n)
-  val clusters = pairings.foldLeft(IArray.empty[Set[Point3D]]): case (acc, (a, b)) =>
-    include(a, b, acc)
-  val full = clusters.map(_.size).sortBy(-_) ++ (rest0.flatMap((a, b) => IArray(1, 1)))
+  var acc = IArray.empty[Set[Point3D]]
+  for (a, b) <- pairings do
+    acc = include(a, b, acc)
+  val full = acc.map(_.size).sortBy(-_) ++ IArray.fill(rest0.length * 2)(1)
   full.take(3).product
 
 def solve2(input: String): BigInt =
   boundary:
     val state0 = calcDistances(input)
     val target = state0.points.length
-    state0.conns.foldLeft(IArray.empty[Set[Point3D]]): case (acc, (a, b)) =>
-      val acc0 = include(a, b, acc)
-      if acc0.headOption.exists(_.size == target) then
+    var acc = IArray.empty[Set[Point3D]]
+    for (a, b) <- state0.conns do
+      acc = include(a, b, acc)
+      if acc.head.size == target then
         break(BigInt(a.x) * BigInt(b.x))
-      else
-        acc0
     sys.error("No solution found")
